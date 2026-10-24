@@ -88,19 +88,6 @@ python -m unittest -v
 | STORE4 | 2,850 | 299 | Emil Rempel, Heriberto Kutch & Merle Rice | 198 | `[53949]` |
 | STORE5 | 2,987 | 311 | Dulcie Bode | 169 | `[51827]` |
 
-## Publish with GitHub and Vercel
-
-1. Run the analysis and include `output/dashboard.html` in the GitHub
-   repository. Do **not** add the source archive or raw customer files.
-2. In Vercel, import the GitHub repository as a static site (framework
-   preset: **Other**). No build command is needed when deploying the generated
-   HTML as-is; configure the output directory to the folder containing the
-   HTML page.
-3. For a root URL, place the generated dashboard at the deployment root as
-   `index.html`, or configure Vercel to serve `output/dashboard.html`.
-4. Review Vercel's access settings before sharing the deployed link. A private
-   GitHub repository does not by itself guarantee that the deployed page is
-   private.
 
 The dashboard is self-contained HTML with its chart images embedded, so it
 does not require an API, server, or separate static assets at runtime.
