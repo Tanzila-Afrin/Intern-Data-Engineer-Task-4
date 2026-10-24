@@ -7,7 +7,7 @@ analyzed separately, and the dashboard lets you switch between stores.
 
 ## Dashboard
 
-After running the analysis, open [`output/index.html`](./output/index.html)
+After running the analysis, open [`/index.html`](./index.html)
 in a browser. The dashboard includes:
 
 - **Overview:** revenue, books sold, order count, reconciled users, daily
