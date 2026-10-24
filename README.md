@@ -13,16 +13,21 @@ backend.
 
 ## Dashboard views
 
-- **Overview:** sales KPIs, daily revenue chart, and the five highest-revenue
-  days.
+- **Overview:** sales KPIs, daily revenue line chart, and a bar chart comparing
+  the five highest-revenue days.
+- **Store comparison:** side-by-side revenue and customer comparisons across
+  all five stores, data-driven highlights, and a daily revenue calendar heatmap.
 - **Customers & Authors:** reconciled unique-user count, unique author-set
   count, most popular author set, and best buyer with associated user IDs.
-- **Revenue:** daily revenue chart and top-five-day breakdown.
+- **Revenue:** daily revenue line chart and top-five-day comparison bar chart.
 - **Ask the data:** a local, rule-based helper for questions about the
   displayed metrics; it does not send data to an AI service.
 
 Use the store selector to view STORE1 through STORE5 separately. Revenue is
 reported in USD.
+
+The visual style uses a warm, book-inspired palette, with forest green and
+amber accents.
 
 ## Metric and data-cleaning notes
 
