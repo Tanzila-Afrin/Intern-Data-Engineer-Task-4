@@ -1,86 +1,46 @@
-"# Intern-Data-Engineer-Task-4" 
 # Store Performance Dashboard
 
-A pandas-based analysis of five book stores, with a standalone BI-style
-dashboard for revenue, customers, and author performance. Each store is
-analyzed separately, and the dashboard lets you switch between stores.
+A BI-style dashboard summarizing book sales, customers, authors, and daily
+revenue across five stores.
 
-## Dashboard
+## Live dashboard
 
-After running the analysis, open [`/index.html`](./index.html)
-in a browser. The dashboard includes:
+**[Open Store Performance Dashboard](https://store-performance-dashboard-six.vercel.app/)**
 
-- **Overview:** revenue, books sold, order count, reconciled users, daily
-  revenue chart, and top five revenue days.
-- **Customers & Authors:** unique user and author-set counts, the best-selling
-  author set, and the top buyer's spending and associated user IDs.
-- **Revenue:** daily revenue chart and top five revenue days.
-- **Ask the data:** a local, rule-based chat helper for questions about the
-  displayed metrics. It does not call an AI service.
+The dashboard is also available as [`dashboard.html`](./dashboard.html) in
+this repository. It is a self-contained static page and does not require a
+backend.
 
-Generated per-store summaries and chart images are saved in `output/`.
+## Dashboard views
 
-## Data
+- **Overview:** sales KPIs, daily revenue chart, and the five highest-revenue
+  days.
+- **Customers & Authors:** reconciled unique-user count, unique author-set
+  count, most popular author set, and best buyer with associated user IDs.
+- **Revenue:** daily revenue chart and top-five-day breakdown.
+- **Ask the data:** a local, rule-based helper for questions about the
+  displayed metrics; it does not send data to an AI service.
 
-The analysis expects a ZIP archive containing these files for each store:
+Use the store selector to view STORE1 through STORE5 separately. Revenue is
+reported in USD.
 
-```text
-STORE1/users.csv
-STORE1/orders.parquet
-STORE1/books.yaml
-...
-STORE5/users.csv
-STORE5/orders.parquet
-STORE5/books.yaml
-```
+## Metric and data-cleaning notes
 
-The source data archive is not included in this repository. Keep raw customer
-data out of public repositories. The generated dashboard includes top-buyer
-user IDs, so review sharing permissions before publishing it.
+- Order timestamps use mixed source formats. Ambiguous slash-formatted dates
+  are interpreted month-first.
+- Prices without a currency marker are treated as USD. EUR prices use the
+  conversion rate **€1 = $1.20** and are rounded to the nearest cent.
+- Customer profiles are reconciled when three of the four normalized
+  identity fields (name, address, phone, and email) match, following the
+  assumption that at most one field changes.
+- An author set is a distinct combination of co-authors. Popularity is based
+  on the quantity of books sold for that author set.
+- The best buyer's displayed IDs are the source user IDs linked to that
+  reconciled customer.
 
-## Run locally
+## Results
 
-Requires Python 3.10 or newer.
-
-```powershell
-python -m pip install -r requirements.txt
-python analyze.py --archive C:\path\to\data.zip --output-dir output
-```
-
-Then open `output\dashboard.html` in your browser. To run the unit tests:
-
-```powershell
-python -m unittest -v
-```
-
-## Cleaning and metric definitions
-
-- IDs and quantities are converted to numeric types. Orders with missing or
-  malformed required values, non-positive or non-integral quantities, invalid
-  prices, or invalid timestamps are excluded. Duplicate user and order IDs
-  keep their first row; blank optional user fields remain missing.
-- Mixed timestamp formats are parsed. Ambiguous slash-formatted dates use
-  month-first interpretation. If a timestamp includes a timezone, it is
-  converted to UTC before deriving the date.
-- Prices are calculated in integer cents to avoid floating-point rounding
-  issues. USD is assumed when the currency is not marked. EUR is converted at
-  **€1 = $1.20** and rounded to the nearest cent (half up). A cent sign
-  between digits is treated as a decimal separator when normalizing malformed
-  price text.
-- `paid_price` is quantity multiplied by the converted unit price.
-- User profiles are reconciled within each store when three of the four
-  normalized fields—name, address, phone, and email—match. This follows the
-  task's assumption that at most one field changes. It does not use fuzzy
-  matching.
-- An author set is a distinct combination of co-authors in the book catalog.
-  Popularity is measured by the total quantity sold for each author set.
-- Daily revenue is the sum of `paid_price` grouped by the date extracted from
-  the order timestamp. The best buyer is the reconciled customer with the
-  greatest total spending; all linked source user IDs are reported.
-
-## Results from the supplied data
-
-| Store | Unique users | Unique author sets | Most popular author set | Books sold by set | Best buyer user IDs |
+| Store | Unique users | Unique author sets | Most popular author set | Books sold by set | Best buyer IDs |
 |---|---:|---:|---|---:|---|
 | STORE1 | 3,221 | 324 | Darron Ernser & Miss Lorina Kertzmann | 173 | `[49954]` |
 | STORE2 | 3,166 | 281 | Kenneth Hamill & Marcus McKenzie | 176 | `[49476, 49910]` |
@@ -88,7 +48,8 @@ python -m unittest -v
 | STORE4 | 2,850 | 299 | Emil Rempel, Heriberto Kutch & Merle Rice | 198 | `[53949]` |
 | STORE5 | 2,987 | 311 | Dulcie Bode | 169 | `[51827]` |
 
+## Deployment
 
-The dashboard is self-contained HTML with its chart images embedded, so it
-does not require an API, server, or separate static assets at runtime.
-
+The page is hosted on Vercel and published at the live-dashboard link above.
+Because the dashboard displays buyer IDs, confirm that sharing them publicly
+is permitted. Do not publish the source archive or raw customer records.
