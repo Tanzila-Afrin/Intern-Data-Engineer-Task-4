@@ -7,7 +7,7 @@ revenue across five stores.
 
 **[Open Store Performance Dashboard](https://store-performance-dashboard-six.vercel.app/)**
 
-The dashboard is also available as [`dashboard.html`](./dashboard.html) in
+The dashboard is also available as [`index.html`](./index.html) in
 this repository. It is a self-contained static page and does not require a
 backend.
 
