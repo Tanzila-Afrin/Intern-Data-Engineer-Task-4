@@ -8,8 +8,8 @@ revenue across five stores.
 **[Open Store Performance Dashboard](https://store-performance-dashboard-six.vercel.app/)**
 
 The dashboard is also available as [`index.html`](./index.html) in
-this repository. It is a self-contained static page and does not require a
-backend.
+this repository. Its AI assistant uses the serverless endpoint in
+[`api/chat.js`](./api/chat.js); the rest of the dashboard remains a static page.
 
 ## Dashboard views
 
@@ -20,8 +20,9 @@ backend.
 - **Customers & Authors:** reconciled unique-user count, unique author-set
   count, most popular author set, and best buyer with associated user IDs.
 - **Revenue:** daily revenue line chart and top-five-day comparison bar chart.
-- **Ask the data:** a local, rule-based helper for questions about the
-  displayed metrics; it does not send data to an AI service.
+- **AI data assistant:** answers natural-language questions about the selected
+  store's aggregate revenue, daily trends, user counts, and author metrics.
+  Buyer IDs and customer profile records are excluded from its data context.
 
 Use the store selector to view STORE1 through STORE5 separately. Revenue is
 reported in USD.
@@ -58,3 +59,32 @@ amber accents.
 The page is hosted on Vercel and published at the live-dashboard link above.
 Because the dashboard displays buyer IDs, confirm that sharing them publicly
 is permitted. Do not publish the source archive or raw customer records.
+
+### Configure AI chat on Vercel
+
+The AI assistant calls OpenAI from the serverless endpoint; the API key is
+never placed in browser code.
+
+1. Create an OpenAI API key in your OpenAI developer account. API usage may be
+   billed separately from a ChatGPT subscription.
+2. In Vercel, open **Settings → Environment Variables** and add
+   `OPENAI_API_KEY` with that key. Do not commit the key to GitHub or paste it
+   into `index.html.html`.
+3. Optionally set `OPENAI_MODEL` to a model available in your API account.
+   The default is `gpt-4o-mini`.
+4. Redeploy the project. The deployment must include both `index.html.html`
+   and `api/chat.js`.
+
+The assistant sends the submitted question, recent conversation, and selected
+store's aggregate metrics (sales totals, daily revenues, popular author names,
+and user counts) to OpenAI. Buyer IDs, names, profile records, and best-buyer
+spending are not included in the dashboard context; question text and chat
+history are sent as typed, so do not enter personal or confidential
+information. Requests are limited to 12 per minute per serverless instance;
+this is a basic abuse guard, not a global quota.
+
+Run the serverless endpoint tests with Node.js 18 or newer:
+
+```powershell
+node --test test_chat_api.js
+```
