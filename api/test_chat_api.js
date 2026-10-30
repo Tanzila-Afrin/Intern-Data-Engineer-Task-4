@@ -133,6 +133,40 @@ test("returns setup instructions when the Gemini key is missing", async () => {
   }
 });
 
+test("explains Gemini permission errors without exposing provider details", async () => {
+  const previousKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-key";
+  const originalFetch = global.fetch;
+  global.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        error: {
+          code: 403,
+          message: "The API key is blocked by a restriction.",
+          status: "PERMISSION_DENIED",
+        },
+      }),
+      { status: 403, headers: { "Content-Type": "application/json" } },
+    );
+
+  try {
+    const response = makeResponse();
+    await handler(makeRequest(validBody(), "test-ip-permission"), response);
+    assert.equal(response.statusCode, 502);
+    assert.match(response.body.error, /Gemini denied access/i);
+    assert.match(response.body.error, /Google AI Studio API key/i);
+    assert.match(response.body.error, /API restrictions/i);
+    assert.doesNotMatch(response.body.error, /blocked by a restriction/i);
+  } finally {
+    global.fetch = originalFetch;
+    if (previousKey === undefined) {
+      delete process.env.GEMINI_API_KEY;
+    } else {
+      process.env.GEMINI_API_KEY = previousKey;
+    }
+  }
+});
+
 test("explains when Gemini reports that API quota is exhausted", async () => {
   const previousKey = process.env.GEMINI_API_KEY;
   process.env.GEMINI_API_KEY = "test-key";

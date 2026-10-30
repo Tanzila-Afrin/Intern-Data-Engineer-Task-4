@@ -87,6 +87,10 @@ The Gemini API has separate quotas and terms from the consumer Gemini app.
 Review current model-specific limits and data-use terms before using it with
 production or sensitive information. If the assistant reports a quota or rate
 limit, check the API key's model access and current limits in Google AI Studio.
+If it reports a permission error, verify that `GEMINI_API_KEY` is a valid
+Google AI Studio key in Vercel, that the Generative Language API is enabled,
+and that any API-key restrictions allow this API. The `.env.example` value is
+only a placeholder; never put a real key in that file or in browser code.
 
 Run the serverless endpoint tests with Node.js 18 or newer:
 

@@ -271,6 +271,8 @@ module.exports = async function handler(req, res) {
                 : "Gemini returned HTTP 429. Check the model's availability and current API quota or rate limits in Google AI Studio."
             : upstream.status === 401
               ? "AI chat is not configured correctly. Check the GEMINI_API_KEY value in Vercel."
+              : upstream.status === 403
+                ? "Gemini denied access to this API request. In Vercel, set GEMINI_API_KEY to a valid Google AI Studio API key. Check that the Generative Language API is enabled, the key's API restrictions allow it, and GEMINI_MODEL is available to that key."
               : "The AI service could not answer that question. Please try again.",
       },
     );
