@@ -216,14 +216,49 @@ module.exports = async function handler(req, res) {
   }
 
   if (!upstream.ok) {
-    console.error("OpenAI chat returned HTTP", upstream.status);
+    let upstreamError;
+    try {
+      const errorResponse = await upstream.json();
+      upstreamError = errorResponse && errorResponse.error;
+    } catch (error) {
+      console.error("Could not parse OpenAI error response:", error.message);
+    }
+
+    const errorCode =
+      upstreamError && typeof upstreamError.code === "string"
+        ? upstreamError.code.toLowerCase()
+        : "";
+    const errorType =
+      upstreamError && typeof upstreamError.type === "string"
+        ? upstreamError.type.toLowerCase()
+        : "";
+    const errorMessage =
+      upstreamError && typeof upstreamError.message === "string"
+        ? upstreamError.message.toLowerCase()
+        : "";
+    console.error("OpenAI chat returned HTTP", upstream.status, {
+      type: errorType || "unknown",
+      code: errorCode || "unknown",
+    });
+
+    const quotaUnavailable =
+      errorCode === "insufficient_quota" ||
+      errorType === "insufficient_quota" ||
+      errorMessage.includes("exceeded your current quota");
+    const rateLimitExceeded =
+      errorCode === "rate_limit_exceeded" ||
+      errorType === "rate_limit_exceeded";
     return sendJson(
       res,
       upstream.status === 429 ? 429 : upstream.status === 401 ? 503 : 502,
       {
         error:
           upstream.status === 429
-            ? "The AI service is busy or its quota is unavailable. Please try again later."
+            ? quotaUnavailable
+              ? "The OpenAI API account has no available quota. Check API billing, credits, and project usage limits in the OpenAI platform; a ChatGPT subscription does not include API usage."
+              : rateLimitExceeded
+                ? "The OpenAI API rate limit was reached. Wait briefly before trying again."
+                : "OpenAI returned HTTP 429. Check API billing, credits, project usage limits, and rate limits in the OpenAI platform before trying again."
             : upstream.status === 401
               ? "AI chat is not configured correctly. Check the API key in Vercel."
               : "The AI service could not answer that question. Please try again.",

@@ -128,6 +128,71 @@ test("returns setup instructions when the OpenAI key is missing", async () => {
   }
 });
 
+test("explains when OpenAI reports that API quota is exhausted", async () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "test-key";
+  const originalFetch = global.fetch;
+  global.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        error: {
+          message: "You exceeded your current quota.",
+          type: "insufficient_quota",
+          code: "insufficient_quota",
+        },
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } },
+    );
+
+  try {
+    const response = makeResponse();
+    await handler(makeRequest(validBody(), "test-ip-quota"), response);
+    assert.equal(response.statusCode, 429);
+    assert.match(response.body.error, /no available quota/i);
+    assert.match(response.body.error, /billing, credits, and project usage limits/i);
+    assert.doesNotMatch(response.body.error, /You exceeded your current quota/);
+  } finally {
+    global.fetch = originalFetch;
+    if (previousKey === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = previousKey;
+    }
+  }
+});
+
+test("explains when OpenAI reports a temporary rate limit", async () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "test-key";
+  const originalFetch = global.fetch;
+  global.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        error: {
+          message: "Rate limit reached.",
+          type: "tokens",
+          code: "rate_limit_exceeded",
+        },
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } },
+    );
+
+  try {
+    const response = makeResponse();
+    await handler(makeRequest(validBody(), "test-ip-rate-limit"), response);
+    assert.equal(response.statusCode, 429);
+    assert.match(response.body.error, /rate limit was reached/i);
+    assert.match(response.body.error, /Wait briefly/i);
+  } finally {
+    global.fetch = originalFetch;
+    if (previousKey === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = previousKey;
+    }
+  }
+});
+
 test("validates request method, size, and selected store", async () => {
   const getResponse = makeResponse();
   await handler(

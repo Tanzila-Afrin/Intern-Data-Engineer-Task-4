@@ -83,6 +83,11 @@ history are sent as typed, so do not enter personal or confidential
 information. Requests are limited to 12 per minute per serverless instance;
 this is a basic abuse guard, not a global quota.
 
+If the assistant reports that the OpenAI API has no available quota, check
+the API organization's billing, credits, and project usage limits in the
+OpenAI platform. ChatGPT subscriptions do not include API usage. If it reports
+a rate limit instead, wait briefly and try again.
+
 Run the serverless endpoint tests with Node.js 18 or newer:
 
 ```powershell
