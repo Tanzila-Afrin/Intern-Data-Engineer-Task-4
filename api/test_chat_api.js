@@ -49,9 +49,9 @@ function validBody() {
   };
 }
 
-test("sends only aggregate metrics to OpenAI and returns the AI answer", async () => {
-  const previousKey = process.env.OPENAI_API_KEY;
-  process.env.OPENAI_API_KEY = "test-key";
+test("sends only aggregate metrics to Gemini and returns the AI answer", async () => {
+  const previousKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-key";
   const originalFetch = global.fetch;
   let sentRequest;
   global.fetch = async (url, options) => {
@@ -69,7 +69,12 @@ test("sends only aggregate metrics to OpenAI and returns the AI answer", async (
     await handler(makeRequest(validBody(), "test-ip-aggregate"), response);
     assert.equal(response.statusCode, 200);
     assert.equal(response.body.answer, "The top revenue day was April 10.");
-    assert.equal(sentRequest.url, "https://api.openai.com/v1/chat/completions");
+    assert.equal(
+      sentRequest.url,
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    );
+    assert.equal(sentRequest.options.headers.Authorization.endsWith("test-key"), true);
+    assert.equal(sentRequest.body.model, "gemini-3.8-flash");
     assert.equal(sentRequest.options.headers.Authorization, "Bearer test-key");
 
     const sentMessages = JSON.stringify(sentRequest.body.messages);
@@ -84,15 +89,15 @@ test("sends only aggregate metrics to OpenAI and returns the AI answer", async (
   } finally {
     global.fetch = originalFetch;
     if (previousKey === undefined) {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.GEMINI_API_KEY;
     } else {
-      process.env.OPENAI_API_KEY = previousKey;
+      process.env.GEMINI_API_KEY = previousKey;
     }
   }
 });
 
-test("rejects a cross-origin request before contacting OpenAI", async () => {
-  process.env.OPENAI_API_KEY = "test-key";
+test("rejects a cross-origin request before contacting Gemini", async () => {
+  process.env.GEMINI_API_KEY = "test-key";
   const originalFetch = global.fetch;
   let fetchCalled = false;
   global.fetch = async () => {
@@ -113,24 +118,24 @@ test("rejects a cross-origin request before contacting OpenAI", async () => {
   }
 });
 
-test("returns setup instructions when the OpenAI key is missing", async () => {
-  const previousKey = process.env.OPENAI_API_KEY;
-  delete process.env.OPENAI_API_KEY;
+test("returns setup instructions when the Gemini key is missing", async () => {
+  const previousKey = process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_API_KEY;
   try {
     const response = makeResponse();
     await handler(makeRequest(validBody(), "test-ip-no-key"), response);
     assert.equal(response.statusCode, 503);
-    assert.match(response.body.error, /OPENAI_API_KEY/);
+    assert.match(response.body.error, /GEMINI_API_KEY/);
   } finally {
     if (previousKey !== undefined) {
-      process.env.OPENAI_API_KEY = previousKey;
+      process.env.GEMINI_API_KEY = previousKey;
     }
   }
 });
 
-test("explains when OpenAI reports that API quota is exhausted", async () => {
-  const previousKey = process.env.OPENAI_API_KEY;
-  process.env.OPENAI_API_KEY = "test-key";
+test("explains when Gemini reports that API quota is exhausted", async () => {
+  const previousKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-key";
   const originalFetch = global.fetch;
   global.fetch = async () =>
     new Response(
@@ -148,22 +153,22 @@ test("explains when OpenAI reports that API quota is exhausted", async () => {
     const response = makeResponse();
     await handler(makeRequest(validBody(), "test-ip-quota"), response);
     assert.equal(response.statusCode, 429);
-    assert.match(response.body.error, /no available quota/i);
-    assert.match(response.body.error, /billing, credits, and project usage limits/i);
+    assert.match(response.body.error, /quota is exhausted/i);
+    assert.match(response.body.error, /Google AI Studio/i);
     assert.doesNotMatch(response.body.error, /You exceeded your current quota/);
   } finally {
     global.fetch = originalFetch;
     if (previousKey === undefined) {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.GEMINI_API_KEY;
     } else {
-      process.env.OPENAI_API_KEY = previousKey;
+      process.env.GEMINI_API_KEY = previousKey;
     }
   }
 });
 
-test("explains when OpenAI reports a temporary rate limit", async () => {
-  const previousKey = process.env.OPENAI_API_KEY;
-  process.env.OPENAI_API_KEY = "test-key";
+test("explains when Gemini reports a temporary rate limit", async () => {
+  const previousKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-key";
   const originalFetch = global.fetch;
   global.fetch = async () =>
     new Response(
@@ -186,9 +191,9 @@ test("explains when OpenAI reports a temporary rate limit", async () => {
   } finally {
     global.fetch = originalFetch;
     if (previousKey === undefined) {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.GEMINI_API_KEY;
     } else {
-      process.env.OPENAI_API_KEY = previousKey;
+      process.env.GEMINI_API_KEY = previousKey;
     }
   }
 });

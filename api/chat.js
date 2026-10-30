@@ -170,11 +170,11 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return sendJson(res, 503, {
       error:
-        "AI chat is not configured yet. Add OPENAI_API_KEY to the Vercel project environment variables and redeploy.",
+        "AI chat is not configured yet. Add GEMINI_API_KEY to the Vercel project environment variables and redeploy.",
     });
   }
 
@@ -194,22 +194,25 @@ module.exports = async function handler(req, res) {
 
   let upstream;
   try {
-    upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+    upstream = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
         messages,
         max_tokens: 450,
         temperature: 0.3,
       }),
       signal: AbortSignal.timeout(10_000),
-    });
+      },
+    );
   } catch (error) {
-    console.error("OpenAI chat request failed:", error.message);
+    console.error("Gemini chat request failed:", error.message);
     return sendJson(res, 502, {
       error: "The AI service could not be reached. Please try again shortly.",
     });
@@ -221,7 +224,7 @@ module.exports = async function handler(req, res) {
       const errorResponse = await upstream.json();
       upstreamError = errorResponse && errorResponse.error;
     } catch (error) {
-      console.error("Could not parse OpenAI error response:", error.message);
+      console.error("Could not parse Gemini error response:", error.message);
     }
 
     const errorCode =
@@ -236,18 +239,25 @@ module.exports = async function handler(req, res) {
       upstreamError && typeof upstreamError.message === "string"
         ? upstreamError.message.toLowerCase()
         : "";
-    console.error("OpenAI chat returned HTTP", upstream.status, {
+    const errorStatus =
+      upstreamError && typeof upstreamError.status === "string"
+        ? upstreamError.status.toLowerCase()
+        : "";
+    console.error("Gemini chat returned HTTP", upstream.status, {
       type: errorType || "unknown",
       code: errorCode || "unknown",
+      status: errorStatus || "unknown",
     });
 
     const quotaUnavailable =
       errorCode === "insufficient_quota" ||
       errorType === "insufficient_quota" ||
-      errorMessage.includes("exceeded your current quota");
+      errorStatus === "resource_exhausted" ||
+      errorMessage.includes("quota");
     const rateLimitExceeded =
       errorCode === "rate_limit_exceeded" ||
-      errorType === "rate_limit_exceeded";
+      errorType === "rate_limit_exceeded" ||
+      errorMessage.includes("rate limit");
     return sendJson(
       res,
       upstream.status === 429 ? 429 : upstream.status === 401 ? 503 : 502,
@@ -255,12 +265,12 @@ module.exports = async function handler(req, res) {
         error:
           upstream.status === 429
             ? quotaUnavailable
-              ? "The OpenAI API account has no available quota. Check API billing, credits, and project usage limits in the OpenAI platform; a ChatGPT subscription does not include API usage."
+              ? "The Gemini API reports that its quota is exhausted. Check the API key's model access, current quota, and billing or free-tier limits in Google AI Studio."
               : rateLimitExceeded
-                ? "The OpenAI API rate limit was reached. Wait briefly before trying again."
-                : "OpenAI returned HTTP 429. Check API billing, credits, project usage limits, and rate limits in the OpenAI platform before trying again."
+                ? "The Gemini API rate limit was reached. Wait briefly before trying again."
+                : "Gemini returned HTTP 429. Check the model's availability and current API quota or rate limits in Google AI Studio."
             : upstream.status === 401
-              ? "AI chat is not configured correctly. Check the API key in Vercel."
+              ? "AI chat is not configured correctly. Check the GEMINI_API_KEY value in Vercel."
               : "The AI service could not answer that question. Please try again.",
       },
     );
@@ -270,14 +280,14 @@ module.exports = async function handler(req, res) {
   try {
     result = await upstream.json();
   } catch (error) {
-    console.error("Could not parse OpenAI chat response:", error.message);
+    console.error("Could not parse Gemini chat response:", error.message);
     return sendJson(res, 502, {
       error: "The AI service returned an invalid response. Please try again.",
     });
   }
   const answer = result.choices?.[0]?.message?.content;
   if (typeof answer !== "string" || !answer.trim()) {
-    console.error("OpenAI chat response did not contain an answer.");
+    console.error("Gemini chat response did not contain an answer.");
     return sendJson(res, 502, {
       error: "The AI service returned an empty response. Please try again.",
     });

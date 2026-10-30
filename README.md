@@ -62,31 +62,31 @@ is permitted. Do not publish the source archive or raw customer records.
 
 ### Configure AI chat on Vercel
 
-The AI assistant calls OpenAI from the serverless endpoint; the API key is
-never placed in browser code.
+The AI assistant calls the Gemini API from the serverless endpoint. The API
+key is kept on the server and is never placed in browser code.
 
-1. Create an OpenAI API key in your OpenAI developer account. API usage may be
-   billed separately from a ChatGPT subscription.
+1. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey).
 2. In Vercel, open **Settings → Environment Variables** and add
-   `OPENAI_API_KEY` with that key. Do not commit the key to GitHub or paste it
-   into `index.html`.
-3. Optionally set `OPENAI_MODEL` to a model available in your API account.
-   The default is `gpt-4o-mini`.
+   `GEMINI_API_KEY` with the key. Never commit it to GitHub or put it in
+   `index.html`.
+3. Optionally set `GEMINI_MODEL` to a model enabled for your API key. The
+   default is `gemini-3.8-flash`; confirm current model availability and free
+   tier limits in [Google AI Studio](https://ai.google.dev/gemini-api/docs/pricing).
 4. Redeploy the project. The deployment must include both `index.html`
    and `api/chat.js`.
 
 The assistant sends the submitted question, recent conversation, and selected
 store's aggregate metrics (sales totals, daily revenues, popular author names,
-and user counts) to OpenAI. Buyer IDs, names, profile records, and best-buyer
+and user counts) to Gemini. Buyer IDs, names, profile records, and best-buyer
 spending are not included in the dashboard context; question text and chat
 history are sent as typed, so do not enter personal or confidential
 information. Requests are limited to 12 per minute per serverless instance;
 this is a basic abuse guard, not a global quota.
 
-If the assistant reports that the OpenAI API has no available quota, check
-the API organization's billing, credits, and project usage limits in the
-OpenAI platform. ChatGPT subscriptions do not include API usage. If it reports
-a rate limit instead, wait briefly and try again.
+The Gemini API has separate quotas and terms from the consumer Gemini app.
+Review current model-specific limits and data-use terms before using it with
+production or sensitive information. If the assistant reports a quota or rate
+limit, check the API key's model access and current limits in Google AI Studio.
 
 Run the serverless endpoint tests with Node.js 18 or newer:
 
